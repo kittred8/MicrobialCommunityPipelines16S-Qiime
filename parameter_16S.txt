@@ -1,0 +1,6 @@
+qiime_config values:
+pick_otus:otu_picking_method	usearch61
+pick_otus:enable_rev_strand_match	True
+biom-summarize-table:qualitative	True
+
+assign_taxonomy_id_to_taxonomy_fp	/mnt/home/westwill/Reference/gg_13_8_otus/rep_set/97_otus.fasta
