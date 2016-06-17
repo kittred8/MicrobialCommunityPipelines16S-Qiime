@@ -1,0 +1,266 @@
+#How to use MSU HPCC system for MiSeq analysis using FastQC, Trimmomatic, R, and Mothur
+#6-16-2016
+#Will West
+
+#Access MSU HPCC Server
+ssh -X userid@hpcc.msu.edu
+
+#Access a developer node from a gateway (CPU used for processing sequences, this is the processing power version)
+ssh dev-intel07 (chose other nodes if you want more performance and processor cores (k20=20 cores)
+
+#Access MSU HPCC Server
+ssh -X userid@gateway.hpcc.msu.edu 
+
+#Use Moba Xterm if you use the Windows OS, as it has a gui for file bi-directional 
+
+#Make directories in Documents folder
+cd Documents
+mkdir fastq16S
+cd fastq16S
+mkdir QC
+mkdir TrimFastq16S
+cd TrimFastq16S
+mkdir paired
+mkdir unpaired
+cd /mnt/home/userid/Documents/fastq16S
+
+#Load FastQC, this program is designed to assess base pair quality scores, kmer content, adapter content, gc content, etc of reads.
+module load FastQC
+
+#This creates two quality assessment files forward.html and forward.zip and does the same for the reverse. These files assess the quality of your reads.
+#fastqc ./ can be run on forward and reverse reads of individual samples as well
+fastqc *.fastq
+
+#Move forward.fastq to the QC directory
+mv *.fastq /mnt/home/userid/Documents/fastq16S/QC
+
+#Next move into the QC folder and look at each of the fastqc files (this will create a GUI where you can look at the html or the content of the zip files)
+cd
+fastqc 
+
+#move to the fastq16S directory:
+cd /mnt/home/userid/Documents/fastq16S
+
+#Your next step is to improve the quality of your samples using trimmomatic in a bash shell script.
+#Make sure the 16S V9 primers (Adapter16S.fasta) are included in the fastq16S directory (this can be done using nano or Moba Xterm).
+#Create a shell script called trimmomaticPE_QC.sh, this shell will be used to quality score (minimum 20 base Q-score accepted, and minimum read length of 125)
+#The script also removes adapters, primer dimers, and flips reads to make sure they are able to be paired.
+#To do this type the line nano trimmomaticPE_QC.sh and then input the following lines including, but ending with 'done':
+
+nano trimmomatic.sh
+
+#!/bin/bash
+	
+	for file in $(<filelist_PE_QC.txt)
+do
+	java -jar $TRIM/trimmomatic  PE -threads 4 -trimlog mv ${file}_QC_PE_log.fasta ${file}_L001_R1_001.fastq ${file}_L001_R2_001.fastq ${file}_L001_R1_001_pTrim.fastq ${file}_L001_R1_001_uTrim.fastq ${file}_L001_R2_001_pTrim.fastq ${file}_L001_R2_001_uTrim.fastq ILLUMINACLIP:Adapter16S.fasta:2:30:12 LEADING:20 TRAILING:20 MINLEN:125
+
+done
+
+#Hit control x, then y, then enter to save the trimmomatic.sh (there will be prompts).
+
+#The following line makes the shell script executable and read-only:
+chmod +x trimmomatic.sh
+
+#To execute this the trimmomatic.sh shell script, you need to create filelist_PE_QC.txt R.
+#which contains a list of the forward or reverse reads, but without the suffix "_L001_R1_001.fastq" or "_L001_R2_001.fastq". To do this, run the following code:
+
+#Load R on the MSU HPCC
+module load R
+R
+
+#This code can be found in trimmomatic.files.R:
+
+library("stringr")
+library("plyr")
+
+filenames <- system("ls *fastq*", intern=T)
+
+forward="R1"
+reverse="R2"
+
+R1_idx <- grep(forward, filenames)
+R1_files <- filenames[R1_idx]
+
+R2_idx <- grep(reverse, filenames)
+R2_files <- filenames[R2_idx]
+
+filenames.fin <- data.frame(R1_files, R2_files)
+
+QC.files <- data.frame(group=ldply(str_split(filenames.fin[,1], "16S"))$V1, filenames.fin)
+
+write.table(QC.files[,2], "filelist_PE_QC.txt", sep = "\t", row.names=F, col.names=F, quote=F)
+
+
+#Remove the suffix "_L001_R1_001.fastq" or "_L001_R2_001.fastq", using excel or Moba Xterm (control F, find and replace).
+
+
+#To run trimmomatic execute the shell script trimmomaticPE_QC.sh and quality control your paired-end reads type:
+#Keep track of the trimmomatic version used for manuscript purposes
+#Also, for now you are going to have to manually remove the _L001_R1.fastq from each file in the "filelist_PE_QC.txt"
+#In a newer version I will do this in the R code above.
+
+module load trimmomatic 
+./trimmomatic.sh 
+
+# The above code created log files (which describe what was trimmed, what adapters, and primer dimers were removed), 
+#pTrim.fastq files (forward and reverse) are created, which are contains sample reads that were able to successfully paired.
+#uTrim.fastq files contain reads which weren't paired successfully.
+#Move successfully paired (*pTrim.fastq) and poor quality reads (*uTrim.fastq) to the paired and unpaired directories (created earlier)
+mv *pTrim.fastq /mnt/home/userid/DocumentsM/fastq16S/TrimFastq16S/paired
+mv *uTrim.fastq /mnt/home/userid/DocumentsM/fastq16S/TrimFastq16S/unpaired
+mv *log.fasta /mnt/home/userid/DocumentsM/fastq16S/TrimFastq16S/unpaired
+
+cd /mnt/home/userid/DocumentsM/fastq16S/TrimFastq16S/paired
+mkdir pandaseq_merged_reads
+
+#Make the following shell/bash script.
+
+nano pandaseq_merged.sh
+
+#!/bin/bash
+# use pandaseq to merge reads - requires name list (file <16S_SampleList.txt> in same folder as this script) of forward and reverse reads to be merged using the panda-seq program
+
+for file in $(<pandaList16S.txt)
+do
+    pandaseq -f ${file}_L001_R1_001_pTrim.fastq -r ${file}_L001_R2_001_pTrim.fastq -w pandaseq_merged_reads/${file%%-16S*}.fasta -g pandaseq_merged_reads/${file%%-16S*}.log -B -A simple_bayesian -L 275-t 0.6
+
+
+done
+
+#hit control ^ then X, then Y to save and exit the nano writer program.
+
+#The following line makes the shell script executable and read-only:
+chmod +x pandaseq_merge.sh
+
+#Before running the shell script, "pandaList16S.txt" needs to be created in excel or using R (see above R example).
+#pandaList16S.txt contains a list of the samples previously trimmed for quality by trimmomatic.sh
+
+#Use the following R code to make pandaList16S.txt:
+#Load R on the MSU HPCC
+module load R
+R
+
+#This code can be found in trimmomatic.files.R:
+
+library("stringr")
+library("plyr")
+
+filenames <- system("ls *fastq*", intern=T)
+
+forward="R1"
+reverse="R2"
+
+R1_idx <- grep(forward, filenames)
+R1_files <- filenames[R1_idx]
+
+R2_idx <- grep(reverse, filenames)
+R2_files <- filenames[R2_idx]
+
+filenames.fin <- data.frame(R1_files, R2_files)
+
+QC.files <- data.frame(group=ldply(str_split(filenames.fin[,1], "16S"))$V1, filenames.fin)
+
+write.table(QC.files[,2], "pandaList16S.txt", sep = "\t", row.names=F, col.names=F, quote=F)
+
+#Remove the suffixes "_L001_R1_001_pTrim.fastq" and "_L001_R2_001_pTrim.fastq" using excel or Moba Xterm (control F, find and replace).
+
+#To run the script: pandaseq_merg.sh, run the following command:
+./pandaseq_merge.sh
+
+
+#For the next step, there is a required metadata file that has to be created in excel. The minimal required column headers are as follows:
+#  #SampleID	BarcodeSequence	LinkerPrimerSequence	InputFastaFileName  Description
+# Other columns can include metadata about each of the samples but those columns have to be put between InputFastaFileName and Description columns.
+#See metadata file example in MicrobialCommunityPiples16S-Qiime folder
+
+#Create a single file containing high quality reads from all samples. These sequences will be labelled by their sample ID.
+add_qiime_labels.py -i pandaseq_merged_reads/ -m pandaseq_merged_reads/Metadata.txt -c InputFastaFileName -n 1
+
+
+#Next, we have to run Qiime, but Qiime requires a parameter file (soil_params.txt) that modifies base Qiime scripts.
+# We can tell Qiime to utilize a usearch61 to assign taxonomy to OTUs. (assign_taxonomy:assignment_method usearch61)
+# We can tell Qiime to enable reverse strand matching (pick_otus:enable_rev_strand_match True)
+# We can also provide Qiime with a taxonomy file (assign_taxonomy:id_to_taxonomy_fp)
+# Qiime can also take reference sequences that are associated with the taxonomy file (assign_taxonomy:reference_seqs_fp)
+# Keep in mind, the following parameters only work for 16S and the file locations only work for lab members that have access to the 
+# Evans Lab HPCC server. However, these reference database files can be obtained on various websites.
+
+nano soil_params.txt
+
+pick_otus:enable_rev_strand_match True
+assign_taxonomy:assignment_method usearch61
+assign_taxonomy:id_to_taxonomy_fp /mnt/research/EvansLab/Databases/gg_otus_13_8/taxonomy/97_otu_taxonomy.txt
+assign_taxonomy:reference_seqs_fp /mnt/research/EvansLab/Databases/gg_otus_13_8/rep_set/97_otus.fasta
+
+#hit control ^ then X, then Y to save and exit the nano writer program.
+
+#Next we have to create a qsub file that will be used to complete Qiime, a program that will assign OTUs and Taxonomies to your sequences, as well as keep track of sequence counts in a table.
+#Be careful and make sure you have insured your file locations are correct, as this is the largest source of Qiime error.
+nano qiime.sh
+
+#!/bin/sh -login
+#PBS -o /mnt/research/EvansLab/Will/Nash/16S/fastq16S/Trimfastq16S/paired/
+#PBS -j oe
+#PBS -l nodes=1:ppn=20,walltime=96:00:00,mem=256gb
+#PBS -M "Insert Email"
+#PBS -m abe
+#PBS -N 16S_WW
+#PBS -r n
+
+# -o : tells it where to put output from your job
+# -j oe : specifies that output and error messages from your job can be placed in the same location
+# -l : resource requests (maximum amounts needed for each)
+# -M : email address to send status updates to
+# -m abe : what to send email updates about (abort, begin, end)
+# -N : names your job
+# -r n : tells it not to re-run the script in the case of an error (so it doesn't overwrite any results generated by your job)
+
+cd /mnt/research/EvansLab/Will/Nash/16S/fastq16S/Trimfastq16S/paired/
+module purge
+export PATH="/mnt/research/EvansLab/Software/anaconda2/bin:$PATH"
+pick_open_reference_otus.py -i /mnt/research/EvansLab/Will/Nash/16S/fastqITS/Trimfastq16S/paired/combined_seqs.fna -r /mnt/research/EvansLab/Databases/gg_otus_13_8/rep_set/97_otus.fasta -p /mnt/research/EvansLab/Will/Nash/16S/fastq16S/Trimfastq16S/paired/params_soil.txt -o usearch_openref/
+
+
+#hit control ^ then X, then Y to save and exit the nano writer program.
+
+chmod +x qiime.sh
+
+#To run qiime.sh and complete the analysis of your sequences:
+
+qsub qiime.sh
+
+#In the above script: We tell QIIME to look for the input file  -i , "combined_seqs.fna".
+#We chose the clustering method usearch61  -m 
+#We specify that output files should go in a new folder, usearch61_openref/
+#We tell the program to overwrite already-existing files in the folder if we are running this program more than once (-f)
+
+#Other default parameters of interest:
+#Singletons are removed from the OTU table (default flag --min_otu_size)
+#Alignment is performed with PyNAST
+#Taxonomy is assigned with uclust
+#Default workflow values can be changed using a parameter file
+
+
+#Lastly open the folder containing a lot of files:
+
+cd usearch_openref
+
+#In the usearch_openref folder there are many files, but the following files are the two most important:
+#otu_table_mc2_w_tax_no_pynast_failures.biom
+#rep_set.tre
+#The "otu_table_mc2_w_tax_nopynast_failures.biom" is the biom file that contains an OTU table (counts of OTUS) and the associated taxonomy
+#The "rep_set.tre" is a phylogenetic tree of the representative sequences in your dataset.
+#To learn more about the files check out the "qiime.org" site and for downstream microbial analyses.
+#I personally recommend utilizing "phyloseq" and "vegan" R packages to perform downstream analyses
+
+
+
+
+
+
+
+
+
+
+
