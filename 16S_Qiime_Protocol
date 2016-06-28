@@ -142,7 +142,8 @@ done
 #The following line makes the shell script executable and read-only:
 chmod +x pandaseq_merge.sh
 
-#Before running the shell script, "pandaList16S.txt" needs to be created in excel or using R (see above R example).
+#Before running the shell script, "pandaList16S.txt" needs to be created in excel or using R (see above R example). 
+#In excel remove the suffix "_L001_R1_001_pTrim.fastq" and/or "_L001_R2_001_pTrim.fastq"  
 #pandaList16S.txt contains a list of the samples previously trimmed for quality by trimmomatic.sh
 
 #Use the following R code to make pandaList16S.txt:
