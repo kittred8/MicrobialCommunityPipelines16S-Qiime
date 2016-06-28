@@ -229,7 +229,7 @@ nano qiime.sh
 cd /mnt/research/EvansLab/Will/Nash/16S/fastq16S/Trimfastq16S/paired/
 module purge
 export PATH="/mnt/research/EvansLab/Software/anaconda2/bin:$PATH"
-pick_open_reference_otus.py -i /mnt/research/EvansLab/Will/Nash/16S/fastqITS/Trimfastq16S/paired/combined_seqs.fna -r /mnt/research/EvansLab/Databases/gg_otus_13_8/rep_set/97_otus.fasta -p /mnt/research/EvansLab/Will/Nash/16S/fastq16S/Trimfastq16S/paired/params_soil.txt -o usearch_openref/
+pick_open_reference_otus.py -i /mnt/research/EvansLab/Will/Nash/16S/fastq16S/Trimfastq16S/paired/combined_seqs.fna -r /mnt/research/EvansLab/Databases/gg_otus_13_8/rep_set/97_otus.fasta -p /mnt/research/EvansLab/Will/Nash/16S/fastq16S/Trimfastq16S/paired/params_soil.txt -o usearch_openref/
 
 
 #hit control ^ then X, then Y to save and exit the nano writer program.
