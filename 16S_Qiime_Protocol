@@ -35,8 +35,8 @@ module load FastQC
 #fastqc ./ can be run on forward and reverse reads of individual samples as well
 fastqc *.fastq
 
-#Move forward.fastq to the QC directory
-mv *.fastq /mnt/home/userid/Documents/fastq16S/QC
+#Move fastqc to the QC directory
+mv *.fastqc /mnt/home/userid/Documents/fastq16S/QC
 
 #Next move into the QC folder and look at each of the fastqc files (this will create a GUI where you can look at the html or the content of the zip files)
 cd
