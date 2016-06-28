@@ -33,10 +33,12 @@ module load FastQC
 
 #This creates two quality assessment files forward.html and forward.zip and does the same for the reverse. These files assess the quality of your reads.
 #fastqc ./ can be run on forward and reverse reads of individual samples as well
-fastqc *.fastq
+fastqc *fastq
+fastqc *fastq
 
 #Move fastqc to the QC directory
-mv *.fastqc /mnt/home/userid/Documents/fastq16S/QC
+mv *fastqc.zip /mnt/home/userid/Documents/fastq16S/QC
+mv *fastqc.zip /mnt/home/userid/Documents/fastq16S/QC
 
 #Next move into the QC folder and look at each of the fastqc files (this will create a GUI where you can look at the html or the content of the zip files)
 cd
