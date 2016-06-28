@@ -24,6 +24,10 @@ mkdir paired
 mkdir unpaired
 cd /mnt/home/userid/Documents/fastq16S
 
+#Make sure to load files into the folder "/mnt/home/userid/Documents/fastq16S", using manual transfer with moba xterm, filezilla or 
+#use automated file transfer with "wget"
+
+
 #Load FastQC, this program is designed to assess base pair quality scores, kmer content, adapter content, gc content, etc of reads.
 module load FastQC
 
