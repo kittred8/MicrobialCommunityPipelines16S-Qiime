@@ -185,7 +185,8 @@ write.table(QC.files[,2], "pandaList16S.txt", sep = "\t", row.names=F, col.names
 #See metadata file example in MicrobialCommunityPiples16S-Qiime folder
 
 #Create a single file containing high quality reads from all samples. These sequences will be labelled by their sample ID.
-add_qiime_labels.py -i pandaseq_merged_reads/ -m pandaseq_merged_reads/Metadata.txt -c InputFastaFileName -n 1
+module load qiime
+add_qiime_labels.py -i pandaseq_merged_reads/ -m pandaseq_merged_reads/Metadata_Nash_SC.txt -c InputFastaFileName -n 1
 
 
 #Next, we have to run Qiime, but Qiime requires a parameter file (soil_params.txt) that modifies base Qiime scripts.
