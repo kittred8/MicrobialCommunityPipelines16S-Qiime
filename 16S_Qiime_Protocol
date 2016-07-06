@@ -140,7 +140,7 @@ done
 #hit control ^ then X, then Y to save and exit the nano writer program.
 
 #The following line makes the shell script executable and read-only:
-chmod +x pandaseq_merge.sh
+chmod +x pandaseq_merged.sh
 
 #Before running the shell script, "pandaList16S.txt" needs to be created in excel or using R (see above R example). 
 #In excel remove the suffix "_L001_R1_001_pTrim.fastq" and/or "_L001_R2_001_pTrim.fastq"  
@@ -175,8 +175,8 @@ write.table(QC.files[,2], "pandaList16S.txt", sep = "\t", row.names=F, col.names
 
 #Remove the suffixes "_L001_R1_001_pTrim.fastq" and "_L001_R2_001_pTrim.fastq" using excel or Moba Xterm (control F, find and replace).
 
-#To run the script: pandaseq_merg.sh, run the following command:
-./pandaseq_merge.sh
+#To run the script: pandaseq_merged.sh, run the following command:
+./pandaseq_merged.sh
 
 
 #For the next step, there is a required metadata file that has to be created in excel. The minimal required column headers are as follows:
