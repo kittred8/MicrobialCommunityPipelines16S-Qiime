@@ -38,7 +38,7 @@ fastqc *fastq
 
 #Move fastqc to the QC directory
 mv *fastqc.zip /mnt/home/userid/Documents/fastq16S/QC
-mv *fastqc.zip /mnt/home/userid/Documents/fastq16S/QC
+mv *fastqc.html /mnt/home/userid/Documents/fastq16S/QC
 
 #Next move into the QC folder and look at each of the fastqc files (this will create a GUI where you can look at the html or the content of the zip files)
 cd
